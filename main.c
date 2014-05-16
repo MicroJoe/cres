@@ -94,7 +94,10 @@ int main(int argc, const char **argv) {
     }
 
 
-    filelength = malloc(argc * sizeof(int));
+    if (!(filelength = malloc(argc * sizeof(int)))) {
+        perror("malloc");
+        return 3;
+    }
 
     for (i = 1; i < argc; i++) {
         filelength[i] = 0;
