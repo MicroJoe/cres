@@ -96,9 +96,10 @@ void write_main(FILE *out, int number_of_files) {
 
 int main(int argc, const char **argv) {
     int i;
-    size_t j;
     int lineret;
-    size_t l;
+    int number_of_files;
+    size_t j;
+    size_t read_bytes;
     unsigned char buffer[BUFSIZE];
     int *filelength;
     FILE *f, *out;
@@ -107,6 +108,8 @@ int main(int argc, const char **argv) {
         usage();
         return 0; 
     }
+
+    number_of_files = argc - 1;
 
     if (!(out = fopen(OUT_FILE, "w"))) {
         fprintf(stderr, "unable to open output file %s for writing\n", OUT_FILE);
@@ -124,8 +127,8 @@ int main(int argc, const char **argv) {
 
     write_header(out);
 
-    for(i = 1; i < argc; ++i) {
-        if(!(f = fopen(argv[i], "rb"))) {
+    for (i = 1; i < argc; ++i) {
+        if (!(f = fopen(argv[i], "rb"))) {
             fprintf(stderr, "unable to open input file %s for reading\n", argv[i]);
             fclose(out);
             free(filelength);
@@ -135,9 +138,9 @@ int main(int argc, const char **argv) {
         fprintf(out, "\nunsigned char f%d[] = {\n    ", i);
 
         lineret = 0;
-        while((l = fread(buffer, 1, BUFSIZE, f))) {
-            filelength[i] += l;
-            for(j = 0; j < l; ++j) {
+        while ((read_bytes = fread(buffer, 1, BUFSIZE, f))) {
+            filelength[i] += read_bytes;
+            for (j = 0; j < read_bytes; ++j) {
                 fprintf(out, "0x%.2x, ", buffer[j]);
                 if(++lineret == BYTES_PER_LINE) {
                     fprintf(out, "\n    ");
