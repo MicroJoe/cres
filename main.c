@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BUFSIZE 2048 /* taille du buffer de lecture */
 #define BYTES_PER_LINE 12 /* octets par ligne dans le fichier source */
@@ -13,6 +14,7 @@ int main(int argc, const char *argv[])
     int lineret; /* compteur pour le retour à la ligne */
     size_t l; /* nombre d'octets lus */
     unsigned char buffer[BUFSIZE]; /* buffer utilisé pour la lecture */
+    int *filelength;
     FILE *f, *out; /* fichiers (entrée et sortie) */
 
     /* on vérifie qu'on a au moins un fichié passé en paramètre */
@@ -31,6 +33,12 @@ int main(int argc, const char *argv[])
     fprintf(out, "/*\n    fichier généré par cres\n*/\n\n"
                  "#include <stdio.h>\n\n");
 
+    filelength = malloc(argc * sizeof(int));
+
+    for (i = 1; i < argc; i++) {
+        filelength[i] = 0;
+    }
+
     /* pour chaque fichier passé en argument */
     for(i = 1; i < argc; ++i) {
         /* on ouvre le fichier d'entrée en binaire */
@@ -41,11 +49,12 @@ int main(int argc, const char *argv[])
         }
 
         /* on déclare un tableau f<n> contenant les données */
-        fprintf(out, "/* %s */\nunsigned char f%d[] = {\n    ", argv[i], i);
+        fprintf(out, "\nunsigned char f%d[] = {\n    ", i);
 
         /* on parcours le fichier avec le buffer */
         lineret = 0;
         while((l = fread(buffer, 1, BUFSIZE, f))) {
+            filelength[i] += l;
             /* on écrit chaque octet un à un dans sa forme hexa */
             for(j = 0; j < l; ++j) {
                 fprintf(out, "0x%.2x, ", buffer[j]);
@@ -57,24 +66,59 @@ int main(int argc, const char *argv[])
                 }
             }
         }
-
-        /* on a fini avec ce fichier, on clos le tableau */
         fprintf(out, "};\n\n");
+        /* on a fini avec ce fichier, on clos le tableau */
         fclose(f);
     }
+
+    fprintf(out, "unsigned char *files[] = {\n");
+    for (i = 1; i < argc; i++) {
+        fprintf(out, "    f%d", i);
+        if (i != (argc - 1))
+            fprintf(out, ", ");
+        else
+            fprintf(out, "\n");
+    }
+    fprintf(out, "};\n\n");
+
+    fprintf(out, "int filelength[] = {\n");
+    for (i = 1; i < argc; i++) {
+        fprintf(out, "%d", filelength[i]);
+        if (i != (argc - 1)) {
+            fprintf(out, ", ");
+        }
+    }
+    fprintf(out, "\n};\n\n");
+
+    /* écriture de la liste des noms de fichiers */
+    fprintf(out, "char *filenames[] = {\n    ");
+    for (i = 1; i < argc; i++) {
+        fprintf(out, "\"%s\", ", argv[i]);
+    }
+    fprintf(out, "\"\"\n};\n\n");
 
     /* écriture du main */
     fprintf(out,
             "#define NUMFILES %d\n\n"
             "int main(void) {\n"
-            "    int i;\n"
+            "    int i, j;\n"
+            "    FILE *fd;\n"
             "    for (i = 0; i < NUMFILES; ++i) {\n"
+            "        printf(\"Extracting %%s...\", filenames[i]);\n"
+            "        fd = fopen(filenames[i], \"w\");\n"
+            "        for (j = 0; j < filelength[i]; j++) {\n"
+            "           fputc(files[i][j], fd);\n"
+            "        }\n"
+            "        fclose(fd);\n"
+                "    printf(\"\\n\");\n"
             "    }\n"
             "}\n",
             argc-1);
 
     /* on a fini d'écrire le fichier source */
     fclose(out);
+
+    free(filelength);
 
     return 0;
 }
