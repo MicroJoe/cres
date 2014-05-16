@@ -95,7 +95,8 @@ void write_main(FILE *out, int number_of_files) {
 }
 
 int main(int argc, const char **argv) {
-    int i, j;
+    int i;
+    size_t j;
     int lineret;
     size_t l;
     unsigned char buffer[BUFSIZE];
