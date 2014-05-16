@@ -20,7 +20,8 @@
 #include <stdlib.h>
 
 #define BUFSIZE 2048
-#define BYTES_PER_LINE 12 
+#define BYTES_PER_LINE 12
+#define OUT_FILE "out.c"
 
 void usage(void) {
     printf("usage: cres <file1> <file2> ...\n");
@@ -106,11 +107,10 @@ int main(int argc, const char **argv) {
         return 0; 
     }
 
-    if (!(out = fopen("out.c", "w"))) {
-        printf("unable to open output file for writing");
-        return 1;      
+    if (!(out = fopen(OUT_FILE, "w"))) {
+        fprintf(stderr, "unable to open output file %s for writing\n", OUT_FILE);
+        return 1;
     }
-
 
     if (!(filelength = malloc(argc * sizeof(int)))) {
         perror("malloc");
@@ -125,7 +125,7 @@ int main(int argc, const char **argv) {
 
     for(i = 1; i < argc; ++i) {
         if(!(f = fopen(argv[i], "rb"))) {
-            printf("unable to open input file %s", argv[i]);
+            fprintf(stderr, "unable to open input file %s for reading\n", argv[i]);
             fclose(out);
             free(filelength);
             return 2;
