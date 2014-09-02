@@ -37,7 +37,7 @@ void write_header(FILE *out) {
 void write_file_content_list(FILE *out, int amount) {
     int i;
 
-    fprintf(out, "unsigned char *files[] = {\n");
+    fprintf(out, "const unsigned char *files[] = {\n");
 
     for (i = 1; i <= amount; i++) {
         fprintf(out, "    f%d", i);
@@ -52,7 +52,7 @@ void write_file_content_list(FILE *out, int amount) {
 void write_file_length_list(FILE *out, const int *lengths, int amount) {
     int i;
 
-    fprintf(out, "int filelength[] = {\n");
+    fprintf(out, "const int filelength[] = {\n");
 
     for (i = 1; i <= amount; i++) {
         fprintf(out, "%d", lengths[i]);
@@ -67,7 +67,7 @@ void write_file_length_list(FILE *out, const int *lengths, int amount) {
 void write_file_name_list(FILE *out, const char **names, int amount) {
     int i;
 
-    fprintf(out, "char *filenames[] = {\n    ");
+    fprintf(out, "const char *filenames[] = {\n    ");
     for (i = 0; i < amount; i++) {
         fprintf(out, "\"%s\", ", names[i]);
     }
@@ -135,16 +135,18 @@ int main(int argc, const char **argv) {
             return 2;
         }
 
-        fprintf(out, "\nunsigned char f%d[] = {\n    ", i);
+        fprintf(out, "\nconst unsigned char f%d[] = {\n    ", i);
 
         lineret = 0;
         while ((read_bytes = fread(buffer, 1, BUFSIZE, f))) {
             filelength[i] += read_bytes;
             for (j = 0; j < read_bytes; ++j) {
-                fprintf(out, "0x%.2x, ", buffer[j]);
-                if(++lineret == BYTES_PER_LINE) {
+                fprintf(out, "0x%.2x,", buffer[j]);
+                if (++lineret == BYTES_PER_LINE) {
                     fprintf(out, "\n    ");
                     lineret = 0;
+                } else {
+                    fprintf(out, " ");
                 }
             }
         }
